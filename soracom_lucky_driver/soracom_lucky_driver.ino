@@ -1,46 +1,62 @@
 #include <Luckyshield_light.h>
-#include <lorawan_client.h>
+#include <MsTimer2.h>
 #include <avr/wdt.h>
+#include <lorawan_client.h>
 
 #define ANALOGPIN A0
+#define PIR_PIN 4
 #define MAX_COUNT_OF_RETRY 5
 #define MAX_COUNT_OF_RECONNECTION 3
 
+void update_data();
 bool try_send_data(float value, char prefix, int prec);
 void send_data(float value, char prefix, int prec);
 void rebood_program();
+void delay_with_blink(unsigned long delay_time, unsigned long blink_interval);
 
+// grobal variables
 LoRaWANClient client;
-
-void delay_with_blink(unsigned long delay_time, unsigned long blink_interval)
-{
-  static int now_state = LOW;
-  const unsigned long count_of_blink = delay_time / blink_interval;
-
-  for (unsigned long i = count_of_blink; i != 0; --i) {
-    now_state = now_state == HIGH ? LOW : HIGH;
-    digitalWrite(LED_BUILTIN, now_state);
-    delay(blink_interval);
-  }
-  delay(delay_time % blink_interval);
-}
+volatile bool human_detection;
 
 void setup() {
+  human_detection = false;
+  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(PIR_PIN, OUTPUT);
   lucky.begin();
   Serial.begin(9600);
-  if (!client.connect()){
+  if (!client.connect()) {
     Serial.println("failed to connect. Halt...");
     while (true);
   }
-  pinMode(LED_BUILTIN, OUTPUT);
+  MsTimer2::set(3ul * 60 * 1000, &update_data);
+  MsTimer2::start();
 }
 
 void loop() {
-  while (!client.connect(false));
-  send_data(lucky.environment().temperature(), 't', 2);
-  send_data(lucky.environment().humidity(), 'h', 2);
-  send_data(lucky.gpio().digitalRead(PIR), 'p', 1);
-  send_data(analogRead(ANALOGPIN), 'l', 1);
+  if (digitalRead(PIR_PIN)
+    human_detection = true;
+}
+
+void update_data()
+{
+  static int sensor_index = 0;
+
+  switch (sensor_index++) {
+  case 0:
+    send_data(lucky.environment().temperature(), 't', 2);
+    break;
+  case 1:
+    send_data(lucky.environment().humidity(), 'h', 2);
+    break;
+  case 2:
+    send_data(human_detection, 'p', 1);
+    human_detection = false;
+    break;
+  case 3:
+    send_data(analogRead(ANALOGPIN), 'l', 1);
+  }
+
+  sensor_index %= 4;
 }
 
 bool try_send_data(float value, char prefix, int prec)
@@ -78,4 +94,17 @@ void reboot_program()
   wdt_disable();
   wdt_enable(WDTO_15MS);
   while (true);  
+}
+
+void delay_with_blink(unsigned long delay_time, unsigned long blink_interval)
+{
+  static int now_state = LOW;
+  const unsigned long count_of_blink = delay_time / blink_interval;
+
+  for (unsigned long i = count_of_blink; i != 0; --i) {
+    now_state = now_state == HIGH ? LOW : HIGH;
+    digitalWrite(LED_BUILTIN, now_state);
+    delay(blink_interval);
+  }
+  delay(delay_time % blink_interval);
 }
