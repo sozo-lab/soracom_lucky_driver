@@ -65,17 +65,16 @@ bool try_send_data(float value, char prefix, int prec)
   dtostrf(value, -1, prec, buf);
   char json[12];
   sprintf(json, "{\"%c\":%s}", prefix, buf);
-  bool res = client.sendData(json);
-  return res;
+  return client.sendData(json);
 }
 
 void send_data(float value, char prefix, int prec)
 {
   int count_of_error = 0;
   int count_of_reconnection = 0;
-  for (bool res = try_send_data(value, prefix, prec);
-       !res;
-       res = try_send_data(value, prefix, prec)) {
+  for (bool is_good_state = try_send_data(value, prefix, prec);
+       !is_good_state;
+       is_good_state = try_send_data(value, prefix, prec)) {
     if (++count_of_error > MAX_COUNT_OF_RETRY) {
       Serial.print("Error: many fail the resend function");
       client.connect(false);
