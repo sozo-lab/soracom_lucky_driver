@@ -33,7 +33,7 @@ void setup() {
 }
 
 void loop() {
-  if (digitalRead(PIR_PIN)
+  if (digitalRead(PIR_PIN))
     human_detection = true;
 }
 
