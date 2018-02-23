@@ -1,5 +1,5 @@
 #include <Luckyshield_light.h>
-#include <MsTimer2.h>
+#include <FlexiTimer2.h>
 #include <avr/wdt.h>
 #include <lorawan_client.h>
 
@@ -21,25 +21,29 @@ volatile bool human_detection;
 void setup() {
   human_detection = false;
   pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(PIR_PIN, OUTPUT);
+  pinMode(PIR_PIN, INPUT);
   lucky.begin();
   Serial.begin(9600);
   if (!client.connect()) {
     Serial.println("failed to connect. Halt...");
     while (true);
   }
-  MsTimer2::set(3ul * 60 * 1000, &update_data);
-  MsTimer2::start();
+  FlexiTimer2::set(30ul * 1000, &update_data);
+  FlexiTimer2::start();
 }
 
 void loop() {
-  if (digitalRead(PIR_PIN))
+  if (digitalRead(PIR_PIN) == HIGH)
     human_detection = true;
 }
 
 void update_data()
 {
   static int sensor_index = 0;
+  interrupts();
+  digitalWrite(LED_BUILTIN, human_detection ? HIGH : LOW);
+  Serial.print("interrupt ");
+  Serial.println(sensor_index);
 
   switch (sensor_index++) {
   case 0:
@@ -57,6 +61,7 @@ void update_data()
   }
 
   sensor_index %= 4;
+  digitalWrite(LED_BUILTIN, LOW);
 }
 
 bool try_send_data(float value, char prefix, int prec)
@@ -85,7 +90,6 @@ void send_data(float value, char prefix, int prec)
     }
     delay_with_blink(random(500, 3000), 200);
   }
-  delay_with_blink(3ul * 60 * 1000, 1000);
 }
 
 void reboot_program()
