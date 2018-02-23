@@ -76,10 +76,10 @@ void send_data(float value, char prefix, int prec)
        !is_good_state;
        is_good_state = try_send_data(value, prefix, prec)) {
     if (++count_of_error > MAX_COUNT_OF_RETRY) {
-      Serial.print("Error: many fail the resend function");
+      Serial.println("Error: many fail the resend function");
       client.connect(false);
       if (++count_of_reconnection > MAX_COUNT_OF_RECONNECTION) {
-        Serial.print("Reboot: cannot recconect and resend data");
+        Serial.println("Reboot: cannot recconect and resend data");
         reboot_program();
       }
     }
