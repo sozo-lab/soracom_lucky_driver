@@ -11,7 +11,7 @@
 void update_data();
 bool try_send_data(float value, char prefix, int prec);
 void send_data(float value, char prefix, int prec);
-void rebood_program();
+void reboot_program();
 void delay_with_blink(unsigned long delay_time, unsigned long blink_interval);
 
 // grobal variables
@@ -25,8 +25,8 @@ void setup() {
   lucky.begin();
   Serial.begin(9600);
   if (!client.connect()) {
-    Serial.println("failed to connect. Halt...");
-    while (true);
+    Serial.println("failed to connect. Reboot...");
+    reboot_program();
   }
   FlexiTimer2::set(30ul * 1000, &update_data);
   FlexiTimer2::start();
