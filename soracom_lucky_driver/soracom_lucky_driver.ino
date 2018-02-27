@@ -1,11 +1,12 @@
-#include <Luckyshield_light.h>
 #include <FlexiTimer2.h>
+#include <Luckyshield_light.h>
 #include <avr/wdt.h>
+#include <limits.h>
 #include <lorawan_client.h>
 
 #define ANALOGPIN A0
-#define PIR_PIN 4
-#define MAX_COUNT_OF_RETRY 5
+#define PIR_PIN   4
+#define MAX_COUNT_OF_RETRY        5
 #define MAX_COUNT_OF_RECONNECTION 3
 
 void update_data();
@@ -96,7 +97,7 @@ void reboot_program()
 {
   wdt_disable();
   wdt_enable(WDTO_15MS);
-  while (true);  
+  for (unsigned int i = 0; i != UINT_MAX; ++i);
 }
 
 void delay_with_blink(unsigned long delay_time, unsigned long blink_interval)
