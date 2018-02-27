@@ -32,8 +32,13 @@ void setup() {
 }
 
 void loop() {
+  static const unsigned int interval = 30000u;
+  static unsigned int loop_count = interval;
   static int led_state = HIGH;
-  digitalWrite(LED_BUILTIN, led_state = led_state == HIGH ? LOW : HIGH);
+  if (--loop_count == 0) {
+    loop_count = interval;
+    digitalWrite(LED_BUILTIN, led_state = led_state == HIGH ? LOW : HIGH);
+  }
   if (lucky.gpio().digitalRead(PIR) == LOW)
     human_detection = true;
 }
