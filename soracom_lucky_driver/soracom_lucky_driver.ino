@@ -33,7 +33,7 @@ void setup() {
 
 void loop() {
   static int led_state = HIGH;
-  digitalWrite(LED_BUILTIN, led_state = led_state == HIGH : LOW : HIGH);
+  digitalWrite(LED_BUILTIN, led_state = led_state == HIGH ? LOW : HIGH);
   if (lucky.gpio().digitalRead(PIR) == LOW)
     human_detection = true;
 }
