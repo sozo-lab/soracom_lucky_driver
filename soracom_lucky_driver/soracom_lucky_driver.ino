@@ -33,6 +33,8 @@ void setup() {
 }
 
 void loop() {
+  static int led_state = HIGH;
+  digitalWrite(LED_BUILTIN, led_state = led_state == HIGH : LOW : HIGH);
   if (digitalRead(PIR_PIN) == HIGH)
     human_detection = true;
 }
@@ -41,7 +43,6 @@ void update_data()
 {
   static int sensor_index = 0;
   interrupts();
-  digitalWrite(LED_BUILTIN, human_detection ? HIGH : LOW);
   Serial.print("interrupt ");
   Serial.println(sensor_index);
 
@@ -61,7 +62,6 @@ void update_data()
   }
 
   sensor_index %= 4;
-  digitalWrite(LED_BUILTIN, LOW);
 }
 
 bool try_send_data(float value, char prefix, int prec)
