@@ -27,7 +27,7 @@ void setup() {
     Serial.println("failed to connect. Reboot...");
     reboot_program();
   }
-  FlexiTimer2::set(30ul * 1000, &update_data);
+  FlexiTimer2::set(1ul * 60ul * 1000ul, &update_data);
   FlexiTimer2::start();
 }
 
