@@ -5,7 +5,6 @@
 #include <lorawan_client.h>
 
 #define ANALOGPIN A0
-#define PIR_PIN   4
 #define MAX_COUNT_OF_RETRY        5
 #define MAX_COUNT_OF_RECONNECTION 3
 
@@ -22,7 +21,6 @@ volatile bool human_detection;
 void setup() {
   human_detection = false;
   pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(PIR_PIN, INPUT);
   lucky.begin();
   Serial.begin(9600);
   if (!client.connect()) {
@@ -34,9 +32,14 @@ void setup() {
 }
 
 void loop() {
+  static const unsigned int interval = 3000u;
+  static unsigned int loop_count = interval;
   static int led_state = HIGH;
-  digitalWrite(LED_BUILTIN, led_state = led_state == HIGH : LOW : HIGH);
-  if (digitalRead(PIR_PIN) == HIGH)
+  if (--loop_count == 0) {
+    loop_count = interval;
+    digitalWrite(LED_BUILTIN, led_state = led_state == HIGH ? LOW : HIGH);
+  }
+  if (lucky.gpio().digitalRead(PIR) == LOW)
     human_detection = true;
 }
 
