@@ -32,7 +32,7 @@ void setup() {
 }
 
 void loop() {
-  static const unsigned int interval = 30000u;
+  static const unsigned int interval = 3000u;
   static unsigned int loop_count = interval;
   static int led_state = HIGH;
   if (--loop_count == 0) {
