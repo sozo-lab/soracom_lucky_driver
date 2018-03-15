@@ -1,24 +1,34 @@
+#include <TimerOne.h>
 #include <FlexiTimer2.h>
 #include <Luckyshield_light.h>
 #include <avr/wdt.h>
 #include <limits.h>
 #include <lorawan_client.h>
 
-#define ANALOGPIN A0
+// constants of settings
+#define ANALOGPIN                 A0
 #define MAX_COUNT_OF_RETRY        5
 #define MAX_COUNT_OF_RECONNECTION 3
+#define SENDING_INTERVAL_MS       (2ul * 60ul * 1000ul)
+#define REBOOT_INTERVAL_S         (24ul * 60ul * 60ul)
 
-void update_data();
-bool try_send_data(float value, char prefix, int prec);
-void send_data(float value, char prefix, int prec);
-void reboot_program();
-void delay_with_blink(unsigned long delay_time, unsigned long blink_interval);
+// constants by calculation
+#define REBOOT_IGNORE_COUNT REBOOT_INTERVAL_S
+
+void update_data(); //!< integrate sending function for all sensors
+bool try_send_data(float value, char prefix, int prec); //!< send once function
+void send_data(float value, char prefix, int prec); //!< send with re-try function for one sensor
+void reboot_program(); //!< reboot the program with Hardware Reset(WDT)
+void reboot_program_periodically(); //!< reboot the program with Hardware Reset(WDT)
+void delay_with_blink(unsigned long delay_time, unsigned long blink_interval); //!< delay for miliseconds with blinking
 
 // grobal variables
 LoRaWANClient client;
 volatile bool human_detection;
 
 void setup() {
+  FlexiTimer2::stop();
+  Timer1.stop();
   human_detection = false;
   pinMode(LED_BUILTIN, OUTPUT);
   lucky.begin();
@@ -27,8 +37,10 @@ void setup() {
     Serial.println("failed to connect. Reboot...");
     reboot_program();
   }
-  FlexiTimer2::set(1ul * 60ul * 1000ul, &update_data);
+  FlexiTimer2::set(SENDING_INTERVAL_MS, &update_data);
   FlexiTimer2::start();
+  Timer1.initialize();
+  Timer1.attachInterrupt(&reboot_program_periodically);
 }
 
 void loop() {
@@ -100,6 +112,21 @@ void reboot_program()
 {
   wdt_disable();
   wdt_enable(WDTO_15MS);
+  interrupts();
+  for (unsigned int i = 0; i != UINT_MAX; ++i);
+}
+
+void reboot_program_periodically()
+{
+  static unsigned long enter_count = 0;
+  interrupts();
+  if (++enter_count <= REBOOT_IGNORE_COUNT) {
+    digitalWrite(LED_BUILTIN, enter_count % 2 ? HIGH : LOW);
+    return;
+  }
+  wdt_disable();
+  wdt_enable(WDTO_15MS);
+  
   for (unsigned int i = 0; i != UINT_MAX; ++i);
 }
 
