@@ -1,6 +1,6 @@
-#include <TimerOne.h>
 #include <FlexiTimer2.h>
 #include <Luckyshield_light.h>
+#include <TimerOne.h>
 #include <avr/wdt.h>
 #include <limits.h>
 #include <lorawan_client.h>
@@ -27,20 +27,26 @@ LoRaWANClient client;
 volatile bool human_detection;
 
 void setup() {
+  // disable all modules
   FlexiTimer2::stop();
   Timer1.stop();
+  Serial.end();
+  // setup variables
   human_detection = false;
   pinMode(LED_BUILTIN, OUTPUT);
+  // setup periodically reboot timer
+  Timer1.initialize();
+  Timer1.attachInterrupt(&reboot_program_periodically);
+  // setup modules
   lucky.begin();
   Serial.begin(9600);
   if (!client.connect()) {
     Serial.println("failed to connect. Reboot...");
     reboot_program();
   }
+  // setup interrupts
   FlexiTimer2::set(SENDING_INTERVAL_MS, &update_data);
   FlexiTimer2::start();
-  Timer1.initialize();
-  Timer1.attachInterrupt(&reboot_program_periodically);
 }
 
 void loop() {
