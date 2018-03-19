@@ -1,4 +1,5 @@
 #include <limits.h>
+#include <stdint.h>
 
 #include <Luckyshield_light.h>
 #include <avr/wdt.h>
@@ -26,13 +27,13 @@ private:
 
 struct FormatedData
 {
-  unsigned int humidity : 10;
-  unsigned int light : 10;
-  int temperature : 11;
-  bool pir : 1;
-  unsigned int accelerometer_x;
-  unsigned int accelerometer_y;
-  unsigned int accelerometer_z;
+  uint16_t humidity    : 10;
+  uint16_t light       : 10;
+  int16_t  temperature : 11;
+  bool     pir         :  1;
+  uint16_t accelerometer_x;
+  uint16_t accelerometer_y;
+  uint16_t accelerometer_z;
 };
 
 // Faward declaration
