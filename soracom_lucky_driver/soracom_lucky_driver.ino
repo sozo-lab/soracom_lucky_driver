@@ -40,7 +40,6 @@ void reboot();
 
 // Grobal variables
 LoRaWANClient lora_client;
-LoopCounter rate_manager(COUNT_INTERVAL_FOR_MAIN_LOOP);
 
 void setup()
 {
@@ -59,6 +58,8 @@ void setup()
 
 void loop()
 {
+  static LoopCounter rate_manager(COUNT_INTERVAL_FOR_MAIN_LOOP);
+
   if (++rate_manager) {
     lucky.accelerometer().read();
     FormatedData fd = {lucky.environment().humidity() * 10,
@@ -68,7 +69,7 @@ void loop()
                        lucky.accelerometer().x(),
                        lucky.accelerometer().y(),
                        lucky.accelerometer().z()};
-    lora_client.sendBinary((byte*)&fd, sizeof(fd));
+    lora_client.sendBinary(reinterpret_cast<byte*>(&fd), sizeof(fd));
   }
 }
 
