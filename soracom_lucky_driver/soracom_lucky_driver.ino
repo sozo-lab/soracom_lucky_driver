@@ -1,150 +1,102 @@
-#include <FlexiTimer2.h>
-#include <Luckyshield_light.h>
-#include <TimerOne.h>
-#include <avr/wdt.h>
 #include <limits.h>
+
+#include <Luckyshield_light.h>
+#include <avr/wdt.h>
 #include <lorawan_client.h>
 
-// constants of settings
-#define ANALOGPIN                 A0
-#define MAX_COUNT_OF_RETRY        5
-#define MAX_COUNT_OF_RECONNECTION 3
-#define SENDING_INTERVAL_MS       (2ul * 60ul * 1000ul)
-#define REBOOT_INTERVAL_S         (24ul * 60ul * 60ul)
+// define constants
+#define COUNT_INTERVAL_FOR_MAIN_LOOP 30000u
+#define LIGHT_PIN                    A0
 
-// constants by calculation
-#define REBOOT_IGNORE_COUNT REBOOT_INTERVAL_S
+/**
+ * The loop counter for detect overflow as timer.
+ */
+class LoopCounter
+{
+public:
+  LoopCounter(unsigned int interval);
+  explicit operator bool();
+  LoopCounter& operator ++();
+  LoopCounter& next();
 
-void update_data(); //!< integrate sending function for all sensors
-bool try_send_data(float value, char prefix, int prec); //!< send once function
-void send_data(float value, char prefix, int prec); //!< send with re-try function for one sensor
-void reboot_program(); //!< reboot the program with Hardware Reset(WDT)
-void reboot_program_periodically(); //!< reboot the program with Hardware Reset(WDT)
-void delay_with_blink(unsigned long delay_time, unsigned long blink_interval); //!< delay for miliseconds with blinking
+private:
+  const unsigned int interval_;
+  unsigned int now_count_;
+};
 
-// grobal variables
-LoRaWANClient client;
-volatile bool human_detection;
+struct FormatedData
+{
+  unsigned int humidity : 10;
+  unsigned int light : 10;
+  int temperature : 11;
+  bool pir : 1;
+  unsigned int accelerometer_x;
+  unsigned int accelerometer_y;
+  unsigned int accelerometer_z;
+};
 
-void setup() {
-  // disable all modules
-  FlexiTimer2::stop();
-  Timer1.stop();
-  Serial.end();
-  // setup variables
-  human_detection = false;
+// Faward declaration
+void reboot();
+
+// Grobal variables
+LoRaWANClient lora_client;
+LoopCounter rate_manager(COUNT_INTERVAL_FOR_MAIN_LOOP);
+
+void setup()
+{
   pinMode(LED_BUILTIN, OUTPUT);
-  // setup periodically reboot timer
-  Timer1.initialize();
-  Timer1.attachInterrupt(&reboot_program_periodically);
-  // setup modules
-  lucky.begin();
   Serial.begin(9600);
-  if (!client.connect()) {
-    Serial.println("failed to connect. Reboot...");
-    reboot_program();
+  lucky.begin();
+  if (!lora_client.connect()) {
+    Serial.println("Failed to first connect. Reboot...");
+    reboot();
   }
-  // setup interrupts
-  FlexiTimer2::set(SENDING_INTERVAL_MS, &update_data);
-  FlexiTimer2::start();
+  if (sizeof(FormatedData) != 11) {
+    Serial.print("Wrong data size! : ");
+    Serial.println(sizeof(FormatedData));
+  }
 }
 
-void loop() {
-  static const unsigned int interval = 3000u;
-  static unsigned int loop_count = interval;
-  static int led_state = HIGH;
-  if (--loop_count == 0) {
-    loop_count = interval;
-    digitalWrite(LED_BUILTIN, led_state = led_state == HIGH ? LOW : HIGH);
-  }
-  if (lucky.gpio().digitalRead(PIR) == LOW)
-    human_detection = true;
-}
-
-void update_data()
+void loop()
 {
-  static int sensor_index = 0;
-  interrupts();
-  Serial.print("interrupt ");
-  Serial.println(sensor_index);
-
-  switch (sensor_index++) {
-  case 0:
-    send_data(lucky.environment().temperature(), 't', 2);
-    break;
-  case 1:
-    send_data(lucky.environment().humidity(), 'h', 2);
-    break;
-  case 2:
-    send_data(human_detection, 'p', 1);
-    human_detection = false;
-    break;
-  case 3:
-    send_data(analogRead(ANALOGPIN), 'l', 1);
-  }
-
-  sensor_index %= 4;
-}
-
-bool try_send_data(float value, char prefix, int prec)
-{
-  char buf[6];
-  dtostrf(value, -1, prec, buf);
-  char json[12];
-  sprintf(json, "{\"%c\":%s}", prefix, buf);
-  return client.sendData(json);
-}
-
-void send_data(float value, char prefix, int prec)
-{
-  int count_of_error = 0;
-  int count_of_reconnection = 0;
-  for (bool is_good_state = try_send_data(value, prefix, prec);
-       !is_good_state;
-       is_good_state = try_send_data(value, prefix, prec)) {
-    if (++count_of_error > MAX_COUNT_OF_RETRY) {
-      Serial.println("Error: many fail the resend function");
-      client.connect(false);
-      if (++count_of_reconnection > MAX_COUNT_OF_RECONNECTION) {
-        Serial.println("Reboot: cannot recconect and resend data");
-        reboot_program();
-      }
-    }
-    delay_with_blink(random(500, 3000), 200);
+  if (++rate_manager) {
+    lucky.accelerometer().read();
+    FormatedData fd = {lucky.environment().humidity() * 10,
+                       analogRead(LIGHT_PIN),
+                       lucky.environment().temperature() * 10,
+                       lucky.gpio().digitalRead(PIR) == LOW,
+                       lucky.accelerometer().x(),
+                       lucky.accelerometer().y(),
+                       lucky.accelerometer().z()};
+    lora_client.sendBinary((byte*)&fd, sizeof(fd));
   }
 }
 
-void reboot_program()
+LoopCounter::LoopCounter(unsigned int interval)
+  : interval_ (interval),
+    now_count_ (interval)
+{
+}
+
+LoopCounter::operator bool()
+{
+  return now_count_ == 0;
+}
+
+LoopCounter& LoopCounter::next()
+{
+  if (--now_count_ < 0)
+    now_count_ = interval_;
+  return *this;
+}
+
+LoopCounter& LoopCounter::operator++() {
+  return next();
+}
+
+void reboot()
 {
   wdt_disable();
   wdt_enable(WDTO_15MS);
-  interrupts();
   for (unsigned int i = 0; i != UINT_MAX; ++i);
-}
-
-void reboot_program_periodically()
-{
-  static unsigned long enter_count = 0;
-  interrupts();
-  if (++enter_count <= REBOOT_IGNORE_COUNT) {
-    digitalWrite(LED_BUILTIN, enter_count % 2 ? HIGH : LOW);
-    return;
-  }
-  wdt_disable();
-  wdt_enable(WDTO_15MS);
-  
-  for (unsigned int i = 0; i != UINT_MAX; ++i);
-}
-
-void delay_with_blink(unsigned long delay_time, unsigned long blink_interval)
-{
-  static int now_state = LOW;
-  const unsigned long count_of_blink = delay_time / blink_interval;
-
-  for (unsigned long i = count_of_blink; i != 0; --i) {
-    now_state = now_state == HIGH ? LOW : HIGH;
-    digitalWrite(LED_BUILTIN, now_state);
-    delay(blink_interval);
-  }
-  delay(delay_time % blink_interval);
 }
