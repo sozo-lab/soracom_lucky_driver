@@ -29,7 +29,7 @@ struct FormatedData
 {
   uint16_t humidity    : 10;
   uint16_t light       : 10;
-  int16_t  temperature : 11;
+  uint16_t temperature : 11;
   bool     pir         :  1;
   uint16_t accelerometer_x;
   uint16_t accelerometer_y;
