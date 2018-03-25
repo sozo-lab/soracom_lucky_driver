@@ -1,150 +1,377 @@
-#include <FlexiTimer2.h>
+#include <stdint.h>
+
 #include <Luckyshield_light.h>
-#include <TimerOne.h>
-#include <avr/wdt.h>
-#include <limits.h>
 #include <lorawan_client.h>
 
-// constants of settings
-#define ANALOGPIN                 A0
-#define MAX_COUNT_OF_RETRY        5
-#define MAX_COUNT_OF_RECONNECTION 3
-#define SENDING_INTERVAL_MS       (2ul * 60ul * 1000ul)
-#define REBOOT_INTERVAL_S         (24ul * 60ul * 60ul)
+// define constants by user.
+#define LIGHT_PIN                   A0
+#define RESET_PIN                   7
+#define INTERVAL_TIME_FOR_SENDING_S (2u * 60u)
+#define RATE_TIME_HZ                2u
 
-// constants by calculation
-#define REBOOT_IGNORE_COUNT REBOOT_INTERVAL_S
+// define constants for system.
+#define FORMATED_DATA_OBJECT_SIZE    4
+#define INTERVAL_COUNT_FOR_MAIN_LOOP (INTERVAL_TIME_FOR_SENDING_S * RATE_TIME_HZ)
 
-void update_data(); //!< integrate sending function for all sensors
-bool try_send_data(float value, char prefix, int prec); //!< send once function
-void send_data(float value, char prefix, int prec); //!< send with re-try function for one sensor
-void reboot_program(); //!< reboot the program with Hardware Reset(WDT)
-void reboot_program_periodically(); //!< reboot the program with Hardware Reset(WDT)
-void delay_with_blink(unsigned long delay_time, unsigned long blink_interval); //!< delay for miliseconds with blinking
+/**
+ * Destructor makes update the value by now millis().
+ */
+class TimeUpdateGuard
+{
+public:
+  /**
+   * Hold the target reference.
+   *
+   * @param target The update target.
+   */
+  TimeUpdateGuard(unsigned long& target);
 
-// grobal variables
-LoRaWANClient client;
-volatile bool human_detection;
+  /**
+   * Update target by now millis().
+   */
+  ~TimeUpdateGuard();
 
-void setup() {
-  // disable all modules
-  FlexiTimer2::stop();
-  Timer1.stop();
-  Serial.end();
-  // setup variables
-  human_detection = false;
-  pinMode(LED_BUILTIN, OUTPUT);
-  // setup periodically reboot timer
-  Timer1.initialize();
-  Timer1.attachInterrupt(&reboot_program_periodically);
-  // setup modules
-  lucky.begin();
+private:
+  unsigned long& target_; //!< The reference of target.
+};
+
+/**
+ * Class to help run loops at a desired frequency.
+ *
+ * @code
+ * Rate r(2); // 2 Hz work
+ * while (true) {
+ *   // do your work
+ *   r.sleep();
+ * }
+ * @endcode
+ */
+class Rate
+{
+public:
+  /**
+   * Constructor, creates a Rate.
+   *
+   * @param rate The desired rate to run at in Hz.
+   */
+  Rate(double frequency);
+
+  /**
+   * Sets the start time for the rate to now.
+   */
+  void reset();
+
+  /**
+   * Sleeps for any leftover time in a cycle.
+   *
+   * Calculated from the last time sleep, reset, or the constructor was called.
+   *
+   * @return True if the desired rate was met for the cycle, false otherwise.
+   */
+  bool sleep();
+
+private:
+  unsigned long interval_duration_; //!< interval time for millis function.
+  unsigned long last_time_; //!< The time of sleep, seret, or the constructor was called.
+};
+
+/**
+ * The loop counter for detect overflow as like timer.
+ */
+class LoopCounter
+{
+public:
+  /**
+   * The initialization of a counter with the limit value for active.
+   *
+   * @param interval The limit value for overflow detection.
+   */
+  LoopCounter(unsigned int interval);
+
+  /**
+   * The cast operator for as bool.
+   */
+  explicit operator bool();
+
+  /**
+   * The decrement operator with underflow detector.
+   * When underflow, this function reset count to the interval.
+   *
+   * @return This instance.
+   */
+  LoopCounter& operator --();
+
+  /**
+   * The decrement function with underflow detector.
+   * When underflow, this function reset count to the interval.
+   *
+   * @return This instance.
+   */
+  LoopCounter& next();
+
+private:
+  unsigned int interval_; //!< The limit value for overflow detection.
+  unsigned int now_count_; //!< The now value.
+};
+
+/**
+ * The blinker for HIGH and LOW.
+ */
+class Blinker
+{
+public:
+  /**
+   * Setup first value.
+   */
+  Blinker(bool state);
+
+  /**
+   * The cast operator for as HIGH or LOW.
+   */
+  operator bool();
+
+  /**
+   * Change to another state.
+   */
+  void blink();
+
+private:
+  bool state_; //!< The now state.
+};
+
+/**
+ * The PIN Blinker.
+ */
+class PinBlinker : private Blinker
+{
+public:
+  /**
+   * Setup first value at the pin.
+   *
+   * @param pin The target pin number.
+   * @param state The first state.
+   */
+  PinBlinker(int pin, bool state);
+
+  /**
+   * Change PIN to anthor state.
+   */
+  void blink();
+
+private:
+  int pin_; //!< The pin number.
+};
+
+/**
+ * The value of it is reset on reading.
+ *
+ * @tparam T The value type.
+ * @tparam init The init value for reset.
+ */
+template<typename T>
+class VolatilityValue
+{
+public:
+  /**
+   * Set the init value for reading.
+   */
+  VolatilityValue(T init);
+
+  /**
+   * Set the value.
+   *
+   * @param value A new value.
+   */
+  void set(T value);
+
+  /**
+   * Get the value with reset.
+   *
+   * @return The value before reset.
+   */
+  T get();
+
+private:
+  T init_; //!< The init value for reset.
+  T value_; //!< The now value.
+};
+
+/**
+ * The binary layout for Soracom binary parser.
+ */
+struct FormatedData
+{
+  uint16_t light       : 10; //!< 0xffc00000 is light value.
+  uint16_t humidity    : 10; //!< 0x003ff000 is humidity value.
+  uint16_t temperature : 11; //!< 0x00000ffe is temperature value.
+  bool     pir         :  1; //!< 0x00000001 is PIR value.
+};
+
+// Faward declarations
+/**
+ * The reboot function.
+ *
+ * With hardware reset.
+ */
+void reboot();
+
+/**
+ * Set pin state by bool value.
+ *
+ * @param value It means: true as HIGH, false as LOW.
+ */
+void set_pin(int pin, bool value);
+
+// Grobal variables
+LoRaWANClient lora_client; //!< The handle instance for LoRa device.
+
+void setup()
+{
+  pinMode(LIGHT_PIN, INPUT);
   Serial.begin(9600);
-  if (!client.connect()) {
-    Serial.println("failed to connect. Reboot...");
-    reboot_program();
+  lucky.begin();
+  if (!lora_client.connect()) {
+    Serial.println("Failed to first connect. Reboot...");
+    reboot();
   }
-  // setup interrupts
-  FlexiTimer2::set(SENDING_INTERVAL_MS, &update_data);
-  FlexiTimer2::start();
-}
-
-void loop() {
-  static const unsigned int interval = 3000u;
-  static unsigned int loop_count = interval;
-  static int led_state = HIGH;
-  if (--loop_count == 0) {
-    loop_count = interval;
-    digitalWrite(LED_BUILTIN, led_state = led_state == HIGH ? LOW : HIGH);
-  }
-  if (lucky.gpio().digitalRead(PIR) == LOW)
-    human_detection = true;
-}
-
-void update_data()
-{
-  static int sensor_index = 0;
-  interrupts();
-  Serial.print("interrupt ");
-  Serial.println(sensor_index);
-
-  switch (sensor_index++) {
-  case 0:
-    send_data(lucky.environment().temperature(), 't', 2);
-    break;
-  case 1:
-    send_data(lucky.environment().humidity(), 'h', 2);
-    break;
-  case 2:
-    send_data(human_detection, 'p', 1);
-    human_detection = false;
-    break;
-  case 3:
-    send_data(analogRead(ANALOGPIN), 'l', 1);
-  }
-
-  sensor_index %= 4;
-}
-
-bool try_send_data(float value, char prefix, int prec)
-{
-  char buf[6];
-  dtostrf(value, -1, prec, buf);
-  char json[12];
-  sprintf(json, "{\"%c\":%s}", prefix, buf);
-  return client.sendData(json);
-}
-
-void send_data(float value, char prefix, int prec)
-{
-  int count_of_error = 0;
-  int count_of_reconnection = 0;
-  for (bool is_good_state = try_send_data(value, prefix, prec);
-       !is_good_state;
-       is_good_state = try_send_data(value, prefix, prec)) {
-    if (++count_of_error > MAX_COUNT_OF_RETRY) {
-      Serial.println("Error: many fail the resend function");
-      client.connect(false);
-      if (++count_of_reconnection > MAX_COUNT_OF_RECONNECTION) {
-        Serial.println("Reboot: cannot recconect and resend data");
-        reboot_program();
-      }
-    }
-    delay_with_blink(random(500, 3000), 200);
+  if (sizeof(FormatedData) != FORMATED_DATA_OBJECT_SIZE) {
+    Serial.print("Wrong formated data size! : ");
+    Serial.println(sizeof(FormatedData));
   }
 }
 
-void reboot_program()
+void loop()
 {
-  wdt_disable();
-  wdt_enable(WDTO_15MS);
-  interrupts();
-  for (unsigned int i = 0; i != UINT_MAX; ++i);
+  static Rate rate_manager(RATE_TIME_HZ);
+  static LoopCounter loop_counter(INTERVAL_COUNT_FOR_MAIN_LOOP);
+  static PinBlinker led_blinker(LED_BUILTIN, LOW);
+  static VolatilityValue<bool> human_detection(false);
+
+  if (!--loop_counter) {
+    led_blinker.blink();
+    FormatedData fd =
+        {analogRead(LIGHT_PIN),
+         lucky.environment().humidity() * 10,
+         lucky.environment().temperature() * 10,
+         human_detection.get()};
+    if (!lora_client.sendBinary(reinterpret_cast<byte*>(&fd), sizeof(fd)))
+      reboot();
+  } else {
+    if (lucky.gpio().digitalRead(PIR) == LOW)
+      human_detection.set(true);
+  }
+  rate_manager.sleep();
 }
 
-void reboot_program_periodically()
+inline TimeUpdateGuard::TimeUpdateGuard(unsigned long& target)
+  : target_(target)
 {
-  static unsigned long enter_count = 0;
-  interrupts();
-  if (++enter_count <= REBOOT_IGNORE_COUNT) {
-    digitalWrite(LED_BUILTIN, enter_count % 2 ? HIGH : LOW);
-    return;
-  }
-  wdt_disable();
-  wdt_enable(WDTO_15MS);
-  
-  for (unsigned int i = 0; i != UINT_MAX; ++i);
 }
 
-void delay_with_blink(unsigned long delay_time, unsigned long blink_interval)
+inline TimeUpdateGuard::~TimeUpdateGuard()
 {
-  static int now_state = LOW;
-  const unsigned long count_of_blink = delay_time / blink_interval;
+  target_ = millis();
+}
 
-  for (unsigned long i = count_of_blink; i != 0; --i) {
-    now_state = now_state == HIGH ? LOW : HIGH;
-    digitalWrite(LED_BUILTIN, now_state);
-    delay(blink_interval);
-  }
-  delay(delay_time % blink_interval);
+inline Rate::Rate(double frequency)
+  : interval_duration_(1000. / frequency),
+    last_time_(millis())
+{
+}
+
+inline void Rate::reset()
+{
+  last_time_ = millis();
+}
+
+bool Rate::sleep()
+{
+  TimeUpdateGuard tg(last_time_);
+  const unsigned long wait_time = last_time_ + interval_duration_ - millis();
+  if (wait_time >= interval_duration_)
+    return false;
+  delay(wait_time);
+  return true;
+}
+
+inline LoopCounter::LoopCounter(unsigned int interval)
+  : interval_(interval),
+    now_count_()
+{
+}
+
+inline LoopCounter::operator bool()
+{
+  return now_count_;
+}
+
+inline LoopCounter& LoopCounter::next()
+{
+  now_count_ = now_count_ != 0 ? now_count_ - 1 : interval_;
+  return *this;
+}
+
+inline LoopCounter& LoopCounter::operator--() {
+  return next();
+}
+
+inline Blinker::Blinker(bool state)
+  : state_(state)
+{
+}
+
+inline Blinker::operator bool()
+{
+  return state_;
+}
+
+inline void Blinker::blink()
+{
+  state_ = !state_;
+}
+
+PinBlinker::PinBlinker(int pin, bool state)
+  : Blinker(state),
+    pin_(pin)
+{
+  pinMode(pin, OUTPUT);
+  set_pin(pin, state);
+}
+
+void PinBlinker::blink()
+{
+  Blinker::blink();
+  set_pin(pin_, *this);
+}
+
+template<typename T>
+inline VolatilityValue<T>::VolatilityValue(T init)
+  : init_(init),
+    value_(init)
+{
+}
+
+template<typename T>
+inline void VolatilityValue<T>::set(T value)
+{
+  value_ = value;
+}
+
+template<typename T>
+inline T VolatilityValue<T>::get()
+{
+  T last_value = value_;
+  value_ = init_;
+  return last_value;
+}
+
+void reboot()
+{
+  pinMode(RESET_PIN, OUTPUT);
+  digitalWrite(RESET_PIN, LOW);
+}
+
+inline void set_pin(int pin, bool value)
+{
+  digitalWrite(pin, value ? HIGH : LOW);
 }
