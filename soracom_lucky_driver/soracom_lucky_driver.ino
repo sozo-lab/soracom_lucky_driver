@@ -52,7 +52,7 @@ public:
   /**
    * Constructor, creates a Rate.
    *
-   * @param rate The desired rate to run at in Hz.
+   * @param frequency The desired rate to run at in Hz.
    */
   Rate(double frequency);
 
@@ -122,6 +122,8 @@ class Blinker
 public:
   /**
    * Setup first value.
+   *
+   * @param state First state.
    */
   Blinker(bool state);
 
@@ -174,6 +176,8 @@ class VolatilityValue
 public:
   /**
    * Set the init value for reading.
+   *
+   * @param init The default value for reset.
    */
   VolatilityValue(T init);
 
