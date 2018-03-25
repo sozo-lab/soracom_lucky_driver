@@ -4,12 +4,76 @@
 #include <lorawan_client.h>
 
 // define constants by user.
-#define COUNT_INTERVAL_FOR_MAIN_LOOP 30000u
-#define LIGHT_PIN                    A0
-#define RESET_PIN                    6
+#define LIGHT_PIN                   A0
+#define RESET_PIN                   7
+#define INTERVAL_TIME_FOR_SENDING_S (2u * 60u)
+#define RATE_TIME_HZ                2u
 
 // define constants for system.
-#define FORMATED_DATA_OBJECT_SIZE 4
+#define FORMATED_DATA_OBJECT_SIZE    4
+#define INTERVAL_COUNT_FOR_MAIN_LOOP (INTERVAL_TIME_FOR_SENDING_S * RATE_TIME_HZ)
+
+/**
+ * Destructor makes update the value by now millis().
+ */
+class TimeUpdateGuard
+{
+public:
+  /**
+   * Hold the target reference.
+   *
+   * @param target The update target.
+   */
+  TimeUpdateGuard(unsigned long& target);
+
+  /**
+   * Update target by now millis().
+   */
+  ~TimeUpdateGuard();
+
+private:
+  unsigned long& target_; //!< The reference of target.
+};
+
+/**
+ * Class to help run loops at a desired frequency.
+ *
+ * @code
+ * Rate r(2); // 2 Hz work
+ * while (true) {
+ *   // do your work
+ *   r.sleep();
+ * }
+ * @endcode
+ */
+class Rate
+{
+public:
+  /**
+   * Constructor, creates a Rate.
+   *
+   * @param rate The desired rate to run at in Hz.
+   */
+  Rate(double frequency);
+
+  /**
+   * Sets the start time for the rate to now.
+   */
+  void reset();
+
+  /**
+   * Sleeps for any leftover time in a cycle.
+   *
+   * Calculated from the last time sleep, reset, or the constructor was called.
+   *
+   * @return True if the desired rate was met for the cycle, false otherwise.
+   */
+  bool sleep();
+
+private:
+  unsigned long interval_duration_; //!< interval time for millis function.
+  unsigned long last_time_; //!< The time of sleep, seret, or the constructor was called.
+};
 
 /**
  * The loop counter for detect overflow as like timer.
@@ -144,7 +208,6 @@ struct FormatedData
 };
 
 // Faward declarations
-
 /**
  * The reboot function.
  *
@@ -164,9 +227,6 @@ LoRaWANClient lora_client; //!< The handle instance for LoRa device.
 
 void setup()
 {
-  pinMode(RESET_PIN, OUTPUT);
-  digitalWrite(RESET_PIN, HIGH);
-  pinMode(LED_BUILTIN, OUTPUT);
   pinMode(LIGHT_PIN, INPUT);
   Serial.begin(9600);
   lucky.begin();
@@ -182,15 +242,16 @@ void setup()
 
 void loop()
 {
-  static LoopCounter rate_manager(COUNT_INTERVAL_FOR_MAIN_LOOP);
+  static Rate rate_manager(RATE_TIME_HZ);
+  static LoopCounter loop_counter(INTERVAL_COUNT_FOR_MAIN_LOOP);
   static PinBlinker led_blinker(LED_BUILTIN, LOW);
   static VolatilityValue<bool> human_detection(false);
 
-  if (!--rate_manager) {
+  if (!--loop_counter) {
     led_blinker.blink();
-    FormatedData fd = 
-        {lucky.environment().humidity() * 10,
-         analogRead(LIGHT_PIN),
+    FormatedData fd =
+        {analogRead(LIGHT_PIN),
+         lucky.environment().humidity() * 10,
          lucky.environment().temperature() * 10,
          human_detection.get()};
     if (!lora_client.sendBinary(reinterpret_cast<byte*>(&fd), sizeof(fd)))
@@ -199,6 +260,38 @@ void loop()
     if (lucky.gpio().digitalRead(PIR) == LOW)
       human_detection.set(true);
   }
+  rate_manager.sleep();
+}
+
+inline TimeUpdateGuard::TimeUpdateGuard(unsigned long& target)
+  : target_(target)
+{
+}
+
+inline TimeUpdateGuard::~TimeUpdateGuard()
+{
+  target_ = millis();
+}
+
+inline Rate::Rate(double frequency)
+  : interval_duration_(1000. / frequency),
+    last_time_(millis())
+{
+}
+
+inline void Rate::reset()
+{
+  last_time_ = millis();
+}
+
+bool Rate::sleep()
+{
+  TimeUpdateGuard tg(last_time_);
+  const unsigned long wait_time = last_time_ + interval_duration_ - millis();
+  if (wait_time >= interval_duration_)
+    return false;
+  delay(wait_time);
+  return true;
 }
 
 inline LoopCounter::LoopCounter(unsigned int interval)
@@ -274,6 +367,7 @@ inline T VolatilityValue<T>::get()
 
 void reboot()
 {
+  pinMode(RESET_PIN, OUTPUT);
   digitalWrite(RESET_PIN, LOW);
 }
 
