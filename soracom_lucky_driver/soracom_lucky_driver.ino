@@ -1,13 +1,12 @@
-#include <limits.h>
 #include <stdint.h>
 
 #include <Luckyshield_light.h>
-#include <avr/wdt.h>
 #include <lorawan_client.h>
 
 // define constants by user.
 #define COUNT_INTERVAL_FOR_MAIN_LOOP 30000u
 #define LIGHT_PIN                    A0
+#define RESET_PIN                    6
 
 // define constants for system.
 #define FORMATED_DATA_OBJECT_SIZE 4
@@ -165,7 +164,10 @@ LoRaWANClient lora_client; //!< The handle instance for LoRa device.
 
 void setup()
 {
+  pinMode(RESET_PIN, OUTPUT);
+  digitalWrite(RESET_PIN, HIGH);
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(LIGHT_PIN, INPUT);
   Serial.begin(9600);
   lucky.begin();
   if (!lora_client.connect()) {
@@ -191,7 +193,8 @@ void loop()
          analogRead(LIGHT_PIN),
          lucky.environment().temperature() * 10,
          human_detection.get()};
-    lora_client.sendBinary(reinterpret_cast<byte*>(&fd), sizeof(fd));
+    if (!lora_client.sendBinary(reinterpret_cast<byte*>(&fd), sizeof(fd)))
+      reboot();
   } else {
     if (lucky.gpio().digitalRead(PIR) == LOW)
       human_detection.set(true);
@@ -271,9 +274,7 @@ inline T VolatilityValue<T>::get()
 
 void reboot()
 {
-  wdt_disable();
-  wdt_enable(WDTO_15MS);
-  for (unsigned int i = 0; i != UINT_MAX; ++i);
+  digitalWrite(RESET_PIN, LOW);
 }
 
 inline void set_pin(int pin, bool value)
