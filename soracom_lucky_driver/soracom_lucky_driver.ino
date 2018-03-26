@@ -361,7 +361,7 @@ inline void Rate::reset()
 
 bool Rate::sleep()
 {
-  TimeUpdateGuard tg(last_time_);
+  DestructUpdateGuard<decltype(last_time_)> update_guard(last_time_, last_time_ + interval_duration_);
   const unsigned long wait_time = last_time_ + interval_duration_ - millis();
   if (wait_time >= interval_duration_)
     return false;
