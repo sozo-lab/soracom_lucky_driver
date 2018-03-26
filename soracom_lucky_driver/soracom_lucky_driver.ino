@@ -55,6 +55,9 @@ class DestructUpdateGuard
 public:
   /**
    * Hold the target variable.
+   *
+   * @param target A reference of target variable.
+   * @param value A value for update.
    */
   DestructUpdateGuard(T& target, T value);
 
