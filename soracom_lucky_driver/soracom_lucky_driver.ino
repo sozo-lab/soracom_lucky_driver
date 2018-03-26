@@ -36,6 +36,39 @@ private:
 };
 
 /**
+ * Class to update variable on destruct time.
+ *
+ * @code
+ * int v = 10;
+ * {
+ *   DestructUpdateGuard g(v, 50);
+ *   assert(v == 10);
+ * } // destruct g.
+ * assert(v == 50);
+ * @endcode
+ *
+ * @tparam T The variable type.
+ */
+template<typename T>
+class DestructUpdateGuard
+{
+public:
+  /**
+   * Hold the target variable.
+   */
+  DestructUpdateGuard(T& target, T value);
+
+  /**
+   * Update target with the preset value.
+   */
+  ~DestructUpdateGuard();
+
+private:
+  T& target_;
+  T value_;
+};
+
+/**
  * Class to help run loops at a desired frequency.
  *
  * @code
@@ -300,6 +333,19 @@ inline TimeUpdateGuard::TimeUpdateGuard(unsigned long& target)
 inline TimeUpdateGuard::~TimeUpdateGuard()
 {
   target_ = millis();
+}
+
+template<typename T>
+inline DestructUpdateGuard<T>::DestructUpdateGuard(T& target, T value)
+  : target_(target),
+    value_(value)
+{
+}
+
+template<typename T>
+inline DestructUpdateGuard<T>::~DestructUpdateGuard()
+{
+  target_ = value_;
 }
 
 inline Rate::Rate(double frequency)
