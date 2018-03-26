@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['next',['next',['../class_loop_counter.html#a0076b1453072e9cb76e0c3305c249d1e',1,'LoopCounter']]]
+  ['loopcounter',['LoopCounter',['../class_loop_counter.html#a151e3fa7e06e5c2e48a6c3952dd8b610',1,'LoopCounter']]]
 ];

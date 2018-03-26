@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['loopcounter',['LoopCounter',['../class_loop_counter.html',1,'']]]
+  ['formateddata',['FormatedData',['../struct_formated_data.html',1,'']]]
 ];

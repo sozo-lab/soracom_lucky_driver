@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['get',['get',['../class_volatility_value.html#a47119ab138e65466e48f649ad4473cef',1,'VolatilityValue']]]
+  ['destructupdateguard',['DestructUpdateGuard',['../class_destruct_update_guard.html#aabaef53079fbd35fcd078dc559d66e2a',1,'DestructUpdateGuard']]]
 ];

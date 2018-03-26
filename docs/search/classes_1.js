@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['formateddata',['FormatedData',['../struct_formated_data.html',1,'']]]
+  ['destructupdateguard',['DestructUpdateGuard',['../class_destruct_update_guard.html',1,'']]]
 ];

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['rate',['Rate',['../class_rate.html',1,'']]]
+  ['pinblinker',['PinBlinker',['../class_pin_blinker.html',1,'']]]
 ];

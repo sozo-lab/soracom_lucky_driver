@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.13"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>SoracomLuckyDriver: Blinker Class Reference</title>
+<title>SoracomLuckyDriver: DestructUpdateGuard&lt; T &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -62,55 +62,64 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="class_blinker-members.html">List of all members</a>  </div>
+<a href="class_destruct_update_guard-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Blinker Class Reference</div>  </div>
+<div class="title">DestructUpdateGuard&lt; T &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>The blinker for HIGH and LOW.  
- <a href="class_blinker.html#details">More...</a></p>
-<div class="dynheader">
-Inheritance diagram for Blinker:</div>
-<div class="dyncontent">
-<div class="center"><img src="class_blinker__inherit__graph.png" border="0" usemap="#_blinker_inherit__map" alt="Inheritance graph"/></div>
-<map name="_blinker_inherit__map" id="_blinker_inherit__map">
-<area shape="rect" id="node2" href="class_pin_blinker.html" title="The PIN Blinker. " alt="" coords="5,80,87,107"/>
-</map>
-<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
+<p>Class to update variable on destruct time.  
+ <a href="class_destruct_update_guard.html#details">More...</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aad229563d800e75740eacfa92feb749e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_blinker.html#aad229563d800e75740eacfa92feb749e">Blinker</a> (bool state)</td></tr>
-<tr class="memdesc:aad229563d800e75740eacfa92feb749e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Setup first value.  <a href="#aad229563d800e75740eacfa92feb749e">More...</a><br /></td></tr>
-<tr class="separator:aad229563d800e75740eacfa92feb749e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab64c494df189e7a4f276df4b958aa45a"><td class="memItemLeft" align="right" valign="top"><a id="ab64c494df189e7a4f276df4b958aa45a"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_blinker.html#ab64c494df189e7a4f276df4b958aa45a">operator bool</a> ()</td></tr>
-<tr class="memdesc:ab64c494df189e7a4f276df4b958aa45a"><td class="mdescLeft">&#160;</td><td class="mdescRight">The cast operator for as HIGH or LOW. <br /></td></tr>
-<tr class="separator:ab64c494df189e7a4f276df4b958aa45a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6924f6eeca0ee2b78ce6a9afc003fa56"><td class="memItemLeft" align="right" valign="top"><a id="a6924f6eeca0ee2b78ce6a9afc003fa56"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_blinker.html#a6924f6eeca0ee2b78ce6a9afc003fa56">blink</a> ()</td></tr>
-<tr class="memdesc:a6924f6eeca0ee2b78ce6a9afc003fa56"><td class="mdescLeft">&#160;</td><td class="mdescRight">Change to another state. <br /></td></tr>
-<tr class="separator:a6924f6eeca0ee2b78ce6a9afc003fa56"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aabaef53079fbd35fcd078dc559d66e2a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_destruct_update_guard.html#aabaef53079fbd35fcd078dc559d66e2a">DestructUpdateGuard</a> (T &amp;target, T value)</td></tr>
+<tr class="memdesc:aabaef53079fbd35fcd078dc559d66e2a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Hold the target variable.  <a href="#aabaef53079fbd35fcd078dc559d66e2a">More...</a><br /></td></tr>
+<tr class="separator:aabaef53079fbd35fcd078dc559d66e2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a141f2b73c72324113ea1c4dc32c58016"><td class="memItemLeft" align="right" valign="top"><a id="a141f2b73c72324113ea1c4dc32c58016"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_destruct_update_guard.html#a141f2b73c72324113ea1c4dc32c58016">~DestructUpdateGuard</a> ()</td></tr>
+<tr class="memdesc:a141f2b73c72324113ea1c4dc32c58016"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update target with the preset value. <br /></td></tr>
+<tr class="separator:a141f2b73c72324113ea1c4dc32c58016"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>The blinker for HIGH and LOW. </p>
-<div class="fragment"><div class="line"><a class="code" href="class_blinker.html">Blinker</a> b(<span class="keyword">false</span>);</div><div class="line">assert(!b);</div><div class="line">b.blink();</div><div class="line">assert(b);</div><div class="line">b.blink();</div><div class="line">assert(!b);</div></div><!-- fragment --> </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="aad229563d800e75740eacfa92feb749e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aad229563d800e75740eacfa92feb749e">&#9670;&nbsp;</a></span>Blinker()</h2>
+<div class="textblock"><h3>template&lt;typename T&gt;<br />
+class DestructUpdateGuard&lt; T &gt;</h3>
+
+<p>Class to update variable on destruct time. </p>
+<div class="fragment"><div class="line"><span class="keywordtype">int</span> v = 10;</div><div class="line">{</div><div class="line">  <a class="code" href="class_destruct_update_guard.html">DestructUpdateGuard</a> g(v, 50);</div><div class="line">  assert(v == 10);</div><div class="line">} <span class="comment">// destruct g.</span></div><div class="line">assert(v == 50);</div></div><!-- fragment --><dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">T</td><td>The variable type. </td></tr>
+  </table>
+  </dd>
+</dl>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="aabaef53079fbd35fcd078dc559d66e2a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aabaef53079fbd35fcd078dc559d66e2a">&#9670;&nbsp;</a></span>DestructUpdateGuard()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">Blinker::Blinker </td>
+          <td class="memname"><a class="el" href="class_destruct_update_guard.html">DestructUpdateGuard</a>&lt; T &gt;::<a class="el" href="class_destruct_update_guard.html">DestructUpdateGuard</a> </td>
           <td>(</td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>state</em></td><td>)</td>
+          <td class="paramtype">T &amp;&#160;</td>
+          <td class="paramname"><em>target</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -120,10 +129,11 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 </table>
 </div><div class="memdoc">
 
-<p>Setup first value. </p>
+<p>Hold the target variable. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">state</td><td>First state. </td></tr>
+    <tr><td class="paramname">target</td><td>A reference of target variable. </td></tr>
+    <tr><td class="paramname">value</td><td>A value for update. </td></tr>
   </table>
   </dd>
 </dl>

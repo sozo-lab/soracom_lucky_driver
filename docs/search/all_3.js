@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['humidity',['humidity',['../struct_formated_data.html#ad846a0d89ca25f146c8307e08e25dc88',1,'FormatedData']]]
+  ['get',['get',['../class_volatility_value.html#a47119ab138e65466e48f649ad4473cef',1,'VolatilityValue']]]
 ];

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['timeupdateguard',['TimeUpdateGuard',['../class_time_update_guard.html',1,'']]]
+  ['rate',['Rate',['../class_rate.html',1,'']]]
 ];

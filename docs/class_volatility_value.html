@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">SoracomLuckyDriver
-   &#160;<span id="projectnumber">0.1.0</span>
+   &#160;<span id="projectnumber">0.2.0</span>
    </div>
    <div id="projectbrief">Inoue sozo lab: Soracom Lucky Driver</div>
   </td>
@@ -88,7 +88,7 @@ Public Member Functions</h2></td></tr>
 class VolatilityValue&lt; T &gt;</h3>
 
 <p>The value of it is reset on reading. </p>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
+<div class="fragment"><div class="line"><a class="code" href="class_volatility_value.html">VolatilityValue&lt;int&gt;</a> v(200);</div><div class="line">assert(v.get() == 200);</div><div class="line">v.set(10);</div><div class="line">assert(v.get() == 10);</div><div class="line">assert(v.get() == 200);</div></div><!-- fragment --><dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">T</td><td>The value type. </td></tr>
     <tr><td class="paramname">init</td><td>The init value for reset. </td></tr>
@@ -200,7 +200,7 @@ template&lt;typename T &gt; </div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>soracom_lucky_driver/soracom_lucky_driver.ino (40a6e3f Fix reset pin function)</li>
+<li>soracom_lucky_driver/soracom_lucky_driver.ino (85e903d Fix documents for DestructUpdateGuard)</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

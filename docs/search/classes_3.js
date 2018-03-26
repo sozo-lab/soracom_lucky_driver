@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['pinblinker',['PinBlinker',['../class_pin_blinker.html',1,'']]]
+  ['loopcounter',['LoopCounter',['../class_loop_counter.html',1,'']]]
 ];

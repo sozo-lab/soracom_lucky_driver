@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['volatilityvalue',['VolatilityValue',['../class_volatility_value.html',1,'']]]
+  ['timeupdateguard',['TimeUpdateGuard',['../class_time_update_guard.html',1,'']]]
 ];
