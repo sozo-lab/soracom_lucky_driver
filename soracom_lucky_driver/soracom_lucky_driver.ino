@@ -77,6 +77,14 @@ private:
 
 /**
  * The loop counter for detect overflow as like timer.
+ *
+ * @code
+ * LoopCounter lc(3);
+ * assert(!lc);
+ * assert(--lc);
+ * assert(--lc);
+ * assert(!--lc);
+ * @endcode
  */
 class LoopCounter
 {
@@ -116,6 +124,15 @@ private:
 
 /**
  * The blinker for HIGH and LOW.
+ *
+ * @code
+ * Blinker b(false);
+ * assert(!b);
+ * b.blink();
+ * assert(b);
+ * b.blink();
+ * assert(!b);
+ * @endcode
  */
 class Blinker
 {
@@ -166,6 +183,14 @@ private:
 
 /**
  * The value of it is reset on reading.
+ *
+ * @code
+ * VolatilityValue<int> v(200);
+ * assert(v.get() == 200);
+ * v.set(10);
+ * assert(v.get() == 10);
+ * assert(v.get() == 200);
+ * @endcode
  *
  * @tparam T The value type.
  * @tparam init The init value for reset.
