@@ -458,6 +458,7 @@ inline T VolatilityValue<T>::get()
 
 void reboot()
 {
+  delay(10000); // wait for some interrupts
   pinMode(RESET_PIN, OUTPUT);
   digitalWrite(RESET_PIN, LOW);
 }
