@@ -12,6 +12,14 @@
 // define constants for system.
 #define FORMATED_DATA_OBJECT_SIZE    4
 #define INTERVAL_COUNT_FOR_MAIN_LOOP (INTERVAL_TIME_FOR_SENDING_S * RATE_TIME_HZ)
+#define DEBUG 1
+
+// define functions
+#if DEBUG
+#define DEBUG_ECHO(str) Serial.println(str)
+#else
+#define DEBUG_ECHO(str) 0
+#endif
 
 /**
  * Destructor makes update the value by now millis().
@@ -312,8 +320,9 @@ void loop()
   static PinBlinker led_blinker(LED_BUILTIN, LOW);
   static VolatilityValue<bool> human_detection(false);
 
+  led_blinker.blink();
   if (!--loop_counter) {
-    led_blinker.blink();
+    DEBUG_ECHO("Data sending");
     FormatedData fd =
         {analogRead(LIGHT_PIN),
          lucky.environment().humidity() * 10,
@@ -366,6 +375,8 @@ bool Rate::sleep()
 {
   DestructUpdateGuard<decltype(last_time_)> update_guard(last_time_, last_time_ + interval_duration_);
   const unsigned long wait_time = last_time_ + interval_duration_ - millis();
+  DEBUG_ECHO("Rate::sleep() : wait time are");
+  DEBUG_ECHO(wait_time);
   if (wait_time >= interval_duration_)
     return false;
   delay(wait_time);
@@ -386,6 +397,8 @@ inline LoopCounter::operator bool()
 inline LoopCounter& LoopCounter::next()
 {
   now_count_ = now_count_ != 0 ? now_count_ - 1 : interval_;
+  DEBUG_ECHO("LoopCounter::next() : now count after updated are");
+  DEBUG_ECHO(now_count_);
   return *this;
 }
 
