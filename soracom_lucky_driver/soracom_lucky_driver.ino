@@ -10,7 +10,7 @@
 #define RATE_TIME_HZ                2u
 
 // define constants for system.
-#define FORMATED_DATA_OBJECT_SIZE    4
+#define FORMATED_DATA_OBJECT_SIZE    7
 #define INTERVAL_COUNT_FOR_MAIN_LOOP (INTERVAL_TIME_FOR_SENDING_S * RATE_TIME_HZ)
 #define DEBUG 1
 
@@ -274,10 +274,10 @@ private:
  */
 struct FormatedData
 {
-  uint16_t light       : 10; //!< 0xffc00000 is light value.
-  uint16_t humidity    : 10; //!< 0x003ff000 is humidity value.
-  uint16_t temperature : 11; //!< 0x00000ffe is temperature value.
-  bool     pir         :  1; //!< 0x00000001 is PIR value.
+  uint16_t light;        //!< 0xffff000000000 is light value.
+  uint16_t humidity;     //!< 0x0000ffff00000 is humidity value.
+  uint16_t temperature ; //!< 0x00000000ffff0 is temperature value.
+  bool     pir;          //!< 0x0000000000001 is PIR value.
 };
 
 // Faward declarations
