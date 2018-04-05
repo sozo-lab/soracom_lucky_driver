@@ -274,10 +274,10 @@ private:
  */
 struct FormatedData
 {
-  uint16_t light;        //!< 0xffff000000000 is light value.
-  uint16_t humidity;     //!< 0x0000ffff00000 is humidity value.
-  uint16_t temperature ; //!< 0x00000000ffff0 is temperature value.
-  bool     pir;          //!< 0x0000000000001 is PIR value.
+  uint16_t light;        //!< 0xffff0000000000 is light value.
+  uint16_t humidity;     //!< 0x0000ffff000000 is humidity value.
+  uint16_t temperature ; //!< 0x00000000ffff00 is temperature value.
+  bool     pir;          //!< 0x00000000000001 is PIR value.
 };
 
 // Faward declarations
